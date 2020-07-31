@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-
-
-
+# 导入模块
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,37 +11,20 @@ plt.rcParams['font.family'] = "SimHei"
 plt.rcParams['axes.unicode_minus'] = "False"
 plt.rcParams['font.size'] = 15
 
+
+# 导入、查看数据
 data = pd.read_csv('data.csv')
-data
-
-
-
-
-
-# 查看数据的NAN情况
 #data.info()
-data.isnull().sum()
-
-
-
-
-
-# 去除多余索引列
-data = data.drop(labels='Unnamed: 0',axis=1)
+data.isnull().sum()# 查看数据的NAN情况
+data = data.drop(labels='Unnamed: 0',axis=1)# 去除多余索引列
 data
-
-
-# In[ ]:
-
-
 data.drop_duplicates(inplace=True)#查找重复值并删除
 print(data.duplicated().sum())
 
 
 
-
-
-import re#文本内容清洗
+#文本清洗
+import re
 import string
 def remove_punctuation(s):
 #     print(s)
@@ -56,21 +37,13 @@ def remove_punctuation(s):
 
 data['content'] = data['content'].apply(remove_punctuation)
 data.sample(5)
-#data["content"].count()
 
-
-
-
-
-# print(string.punctuation)
 for i in data.iloc[:,0]:
     clean_data = remove_punctuation(i)
     print(clean_data)
-#     break
 
 
-
-
+#分词
 import jieba 
 def cut_word(text):
     return jieba.cut(text)
@@ -79,7 +52,7 @@ data.sample(5)
 
 
 
-
+#去停用词
 def get_stopword():
     s = set()
     with open('stop_words.txt','r',encoding='utf-8') as f:
@@ -95,27 +68,16 @@ data['content'] = data['content'].apply(remove_stopword)
 data.sample(5)
 
 
-
-
-
-t = data['sentiment'].value_counts()
+#描述性统计
+t = data['sentiment'].value_counts()#情感分类柱状图
 print(t)
 t.plot(kind="bar")
 
 
-
-
-
-data["content"]
-
-
-
-from itertools import chain
+from itertools import chain #词汇统计
 from collections import Counter
-
 li_2d = data['content'].tolist()
 li_1d = list(chain.from_iterable(li_2d))
-#二位列表转换为一维列表
 print(f'总词汇量:{len(li_1d)}')
 c = Counter(li_1d)
 print(f'不重复词汇量:{len(c)}')
@@ -124,18 +86,13 @@ print(common)
 
       
 
-
-
-
-d = dict(common)
+d = dict(common)#词语频数
 plt.figure(figsize=(15,5))
 plt.bar(d.keys(),d.values())
 
 
 
-
-
-total = len(li_1d)
+total = len(li_1d)#词语频率
 percentage = [v*100/total for v in d.values()]
 plt.figure(figsize=(15,5))
 plt.bar(d.keys(),percentage)
@@ -147,17 +104,8 @@ from wordcloud import WordCloud#词云
 from PIL import Image
 #wc = WordCloud(font_path=r'C:\Users\dell\Desktop\旅游\font.ttf',width=600,height=400)
 #bg = WordCloud(mask = plt.imread(r'C:\Users\dell\Desktop\旅游\bgf.jpg'))
-
-
-
-
-
 img = Image.open(r'bgf.jpg') # 打开背景图片
 img_array = np.array(img) # 将图片转换为数组
-
-
-
-
 wc = WordCloud(
     background_color="black", # 将背景颜色设置为黑色，也可根据个人喜好更改
     mask=img_array,#背景图
@@ -169,9 +117,7 @@ plt.axis('off')
 wc.to_file("pic.png")
 
 
-
-
-#构建训练与测试集
+#将列表转化为字符串
 def join(text_list):
     return " ".join(text_list)
 
@@ -179,76 +125,21 @@ data["content"] = data["content"].apply(join)
 data.sample(5)
 
 
-
-
-
 #标签列转换为离散值
 data["sentiment"] = data["sentiment"].map({"正":0,"中":1,"负":2})
 data["sentiment"].value_counts()
 
 
-
-
-
-data
-
-
-# ### 对数据打乱顺序并保存好训练和测试数据
-
-
-
-
-# 打乱顺序
+#对数据打乱顺序并保存好训练和测试数据
 data  = data.sample(frac=1).reset_index(drop=True)
-
-
-
-
-
 data
-
-
-
-
-
 data.shape[0]*0.8
-
-
-
-
 train_data = data[:3051]
-
-
-
-
-
 test_data = data[3051:]
-
-
-
-
 train_data
-
-
-
-
-
 test_data
-
-
-
-
-
 train_data.info()
-
-
-
 test_data.info()
-
-
-
-
-
 x_train = train_data["content"]
 y_train = train_data["sentiment"]
 
@@ -256,23 +147,15 @@ x_test = test_data["content"]
 y_test = test_data["sentiment"]
 
 
-
-
+#向量化和特征选择
 from sklearn.feature_extraction.text import TfidfVectorizer
 vec = TfidfVectorizer()
 x_train_tran = vec.fit_transform(x_train)
 x_test_tran = vec.transform(x_test)
 display(x_train_tran,x_test_tran)
 
-
-
-
-
-
 from sklearn.feature_selection import f_classif
 f_classif(x_train_tran,y_train)
-
-
 
 from sklearn.feature_selection import SelectKBest
 
@@ -285,15 +168,12 @@ x_test_tran = selector.transform(x_test_tran)
 print(x_train_tran.shape,x_test_tran.shape)
 
 
-
-
+#机器学习分类模型
 from sklearn.naive_bayes import BernoulliNB
 clf = BernoulliNB(alpha=1.0, binarize=0.0, class_prior=None, fit_prior=False)
 clf.fit(x_train_tran,y_train)  
 pred = clf.predict(x_test_tran)
 print(classification_report(y_test,pred))
-
-
 
 
 from sklearn.tree import DecisionTreeClassifier
@@ -310,14 +190,11 @@ pred = clf2.predict(x_test_tran)
 print(classification_report(y_test,pred))
 
 
-
 from sklearn.neighbors import KNeighborsClassifier
 classifier = KNeighborsClassifier()
 classifier.fit(x_train_tran, y_train)
 pred = classifier.predict(x_test_tran)
 print(classification_report(y_test,pred))
-
-
 
 
 from sklearn.svm import SVC
@@ -328,7 +205,6 @@ print(classification_report(y_test,pred))
 
 
 
-
 from sklearn.linear_model import LogisticRegression
 clf4 = LogisticRegression()
 clf4.fit(x_train_tran,y_train)  
@@ -336,19 +212,7 @@ pred = clf4.predict(x_test_tran)
 print(classification_report(y_test,pred))
 
 
-
-
-from sklearn.neural_network import MLPClassifier
-clf7 = MLPClassifier()
-clf7.fit(x_train_tran,y_train)  
-pred = clf7.predict(x_test_tran)
-print(classification_report(y_test,pred))
-
-
-# ### CNN
-
-
-
+#CNN
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -387,20 +251,13 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 import warnings
 warnings.filterwarnings("ignore")
 
-
-
 x_train = train_data["content"]
 y_train = train_data["sentiment"]
 
 x_test = test_data["content"]
 y_test = test_data["sentiment"]
 
-
-
-
 x_train
-
-
 
 
 y_train
@@ -429,18 +286,10 @@ sequences = tok.texts_to_sequences(x_train)
 sequences_matrix = sequence.pad_sequences(sequences,maxlen=max_len)
 
 
-
-
 # one-hot编码
 from keras.utils import to_categorical
 y_train = to_categorical(y_train)
-
-
-
-
 y_train
-
-
 
 # 计算各个类别的weights
 def get_weight(y):
@@ -486,7 +335,6 @@ class_weight = get_weight(y_train.flatten())
 # In[ ]:
 
 
-
 print("Setting Callbacks")
 
 checkpoint = ModelCheckpoint("model.h5",
@@ -507,7 +355,6 @@ reduce_lr = ReduceLROnPlateau(monitor="val_loss",
                                                       mode="min")
 
 callbacks=[checkpoint,early_stopping,reduce_lr]
-
 
 
 
@@ -542,7 +389,6 @@ cnn_model = CNN()
 print("Starting...\n")
 
 
-
 print("\n\nCompliling Model...\n")
 learning_rate=0.001
 optimizer=Adam(learning_rate)
@@ -555,8 +401,6 @@ epochs=100
 batch_size=8
 validation_split=0.1
 print("Trainning Model...\n")
-cnn_model = load_model("cnn_model1.h5")
-
 cnn_history=cnn_model.fit(sequences_matrix,
                                             y_train,
                                             batch_size=batch_size,
@@ -572,14 +416,36 @@ cnn_history=cnn_model.fit(sequences_matrix,
 predict_sequences = tok.texts_to_sequences(x_test)
 predict_sequences_matrix = sequence.pad_sequences(predict_sequences,maxlen=max_len)
 
-
-
-
+# LDA模型（在分训练集和测试集前完成）
 from keras.models import load_model
 pred = cnn_model.predict_classes(predict_sequences_matrix)
 print(classification_report(y_test,pred))
 
+from gensim import corpora, models, similarities
+import pyLDAvis
+import pyLDAvis.gensim
+import matplotlib.pyplot as plt
 
+data=data.loc[data['content'].apply(len)>=4]
+data.info()
+
+data['content'].apply(lambda x:x.split())
+data['content'].to_csv(r'C:\Users\dell\Desktop\旅游.txt',index=False)
+
+travel = open(r'C:\Users\dell\Desktop\旅游.txt', 'r',encoding='utf-8')
+train = []
+for line in travel.readlines():
+  line = [word.strip() for word in line.split()]
+  train.append(line)
+travel.close()
+
+dictionary = corpora.Dictionary(train)
+corpus = [dictionary.doc2bow(text) for text in train]
+lda = models.LdaModel(corpus=corpus, id2word=dictionary, num_topics=4,passes=100)
+topic_list = lda.print_topics(4,10)
+print("4个主题的单词分布为：\n")
+for topic in topic_list:
+ print(topic)
 
 
 
